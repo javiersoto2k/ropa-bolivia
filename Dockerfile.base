@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libpq-dev curl && rm -rf /var/lib/apt/lists/*
+
+# Copiar shared primero (cacheado si no cambia)
+COPY shared/ /app/shared/
+
+# Instalar dependencias del servicio
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código del servicio
+COPY . .
+
+# Health check por defecto (cada servicio puede sobreescribir el puerto)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-3001}/health || exit 1
+
+# El CMD se define en cada Dockerfile de servicio

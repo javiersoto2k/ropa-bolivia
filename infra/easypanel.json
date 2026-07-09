@@ -1,0 +1,159 @@
+{
+  "project": "ropa-bolivia",
+  "description": "Plataforma e-commerce ropa Bolivia 24/7 con IA — sin n8n",
+  "services": [
+    {
+      "name": "whatsapp-bot",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/whatsapp-bot" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "wa.ropabolivia.com", "port": 3001, "https": true }],
+      "env": [
+        "DATABASE_URL=postgresql://...",
+        "REDIS_URL=redis://...",
+        "ANTHROPIC_API_KEY=sk-ant-...",
+        "WA_ACCESS_TOKEN=...",
+        "WA_PHONE_NUMBER_ID=...",
+        "WA_VERIFY_TOKEN=ropa_bolivia_2025",
+        "CRM_API_URL=http://crm-api:3004",
+        "CATALOG_API_URL=http://catalog-api:3003"
+      ],
+      "resources": { "memory": "256Mi", "cpu": "0.25" },
+      "replicas": 1
+    },
+    {
+      "name": "meta-webhook",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/meta-webhook" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "meta.ropabolivia.com", "port": 3002, "https": true }],
+      "env": [
+        "DATABASE_URL=postgresql://...",
+        "REDIS_URL=redis://...",
+        "ANTHROPIC_API_KEY=sk-ant-...",
+        "META_APP_SECRET=...",
+        "META_PAGE_ACCESS_TOKEN=...",
+        "META_VERIFY_TOKEN=ropa_bolivia_meta"
+      ],
+      "resources": { "memory": "256Mi", "cpu": "0.25" }
+    },
+    {
+      "name": "catalog-api",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/catalog-api" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "catalog.ropabolivia.com", "port": 3003, "https": true }],
+      "env": [
+        "DATABASE_URL=postgresql://...",
+        "ANTHROPIC_API_KEY=sk-ant-..."
+      ],
+      "resources": { "memory": "256Mi", "cpu": "0.25" }
+    },
+    {
+      "name": "crm-api",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/crm-api" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "crm.ropabolivia.com", "port": 3004, "https": true }],
+      "env": [ "DATABASE_URL=postgresql://..." ],
+      "resources": { "memory": "256Mi", "cpu": "0.5" }
+    },
+    {
+      "name": "payment-gateway",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/payment-gateway" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "pay.ropabolivia.com", "port": 3005, "https": true }],
+      "env": [
+        "DATABASE_URL=postgresql://...",
+        "TIGO_MONEY_API_KEY=...",
+        "TIGO_MONEY_MERCHANT_ID=...",
+        "BNB_MERCHANT_CODE=..."
+      ],
+      "resources": { "memory": "128Mi", "cpu": "0.25" }
+    },
+    {
+      "name": "ai-recommender",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/ai-recommender" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "ai.ropabolivia.com", "port": 3006, "https": true }],
+      "env": [
+        "ANTHROPIC_API_KEY=sk-ant-...",
+        "CRM_API_URL=http://crm-api:3004",
+        "CATALOG_API_URL=http://catalog-api:3003"
+      ],
+      "resources": { "memory": "256Mi", "cpu": "0.5" }
+    },
+    {
+      "name": "content-scheduler",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/content-scheduler" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "content.ropabolivia.com", "port": 3007, "https": true }],
+      "env": [
+        "DATABASE_URL=postgresql://...",
+        "ANTHROPIC_API_KEY=sk-ant-...",
+        "META_PAGE_ACCESS_TOKEN=...",
+        "META_PAGE_ID=...",
+        "META_IG_ACCOUNT_ID=...",
+        "AI_RECOMMENDER_URL=http://ai-recommender:3006"
+      ],
+      "resources": { "memory": "256Mi", "cpu": "0.25" }
+    },
+    {
+      "name": "campaign-engine",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/campaign-engine" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "campaigns.ropabolivia.com", "port": 3008, "https": true }],
+      "env": [
+        "DATABASE_URL=postgresql://...",
+        "WA_BOT_URL=http://whatsapp-bot:3001",
+        "CRM_API_URL=http://crm-api:3004",
+        "AI_RECOMMENDER_URL=http://ai-recommender:3006"
+      ],
+      "resources": { "memory": "256Mi", "cpu": "0.25" }
+    },
+    {
+      "name": "analytics-api",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/analytics-api" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "analytics.ropabolivia.com", "port": 3009, "https": true }],
+      "env": [ "DATABASE_URL=postgresql://..." ],
+      "resources": { "memory": "256Mi", "cpu": "0.25" }
+    },
+    {
+      "name": "notification-worker",
+      "type": "app",
+      "source": { "type": "github", "repo": "tu-usuario/ropa-bolivia", "branch": "main", "path": "services/notification-worker" },
+      "build": { "type": "dockerfile" },
+      "domains": [{ "host": "worker.ropabolivia.com", "port": 3010, "https": true }],
+      "env": [
+        "DATABASE_URL=postgresql://...",
+        "WA_BOT_URL=http://whatsapp-bot:3001",
+        "CRM_API_URL=http://crm-api:3004",
+        "AI_RECOMMENDER_URL=http://ai-recommender:3006",
+        "CAMPAIGN_ENGINE_URL=http://campaign-engine:3008",
+        "ANALYTICS_API_URL=http://analytics-api:3009",
+        "OWNER_WHATSAPP=59170000000"
+      ],
+      "resources": { "memory": "256Mi", "cpu": "0.5" }
+    }
+  ],
+  "databases": [
+    {
+      "name": "ropa-postgres",
+      "type": "postgres",
+      "version": "15",
+      "resources": { "memory": "512Mi" }
+    },
+    {
+      "name": "ropa-redis",
+      "type": "redis",
+      "version": "7",
+      "resources": { "memory": "128Mi" }
+    }
+  ]
+}

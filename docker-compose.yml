@@ -1,0 +1,195 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RopaBolivia — Microservicios · Desarrollo local
+# Uso: docker-compose up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  ropa-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+
+# ─── INFRAESTRUCTURA ─────────────────────────────────────────────────────────
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ropa-postgres
+    environment:
+      POSTGRES_DB:       ropa_bolivia
+      POSTGRES_USER:     ropa_user
+      POSTGRES_PASSWORD: ropa_pass_2025
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks: [ropa-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ropa_user -d ropa_bolivia"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ropa-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks: [ropa-net]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+
+# ─── MICROSERVICIOS ──────────────────────────────────────────────────────────
+
+  whatsapp-bot:
+    build: ./services/whatsapp-bot
+    container_name: ropa-whatsapp-bot
+    ports: ["3001:3001"]
+    environment:
+      DATABASE_URL:       postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+      REDIS_URL:          redis://redis:6379
+      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY}
+      WA_ACCESS_TOKEN:    ${WA_ACCESS_TOKEN}
+      WA_PHONE_NUMBER_ID: ${WA_PHONE_NUMBER_ID}
+      WA_VERIFY_TOKEN:    ropa_bolivia_2025
+      CRM_API_URL:        http://crm-api:3004
+      CATALOG_API_URL:    http://catalog-api:3003
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis:    {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  meta-webhook:
+    build: ./services/meta-webhook
+    container_name: ropa-meta-webhook
+    ports: ["3002:3002"]
+    environment:
+      DATABASE_URL:             postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+      REDIS_URL:                redis://redis:6379
+      ANTHROPIC_API_KEY:        ${ANTHROPIC_API_KEY}
+      META_APP_SECRET:          ${META_APP_SECRET}
+      META_PAGE_ACCESS_TOKEN:   ${META_PAGE_ACCESS_TOKEN}
+      META_VERIFY_TOKEN:        ropa_bolivia_meta
+      CRM_API_URL:              http://crm-api:3004
+      CATALOG_API_URL:          http://catalog-api:3003
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis:    {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  catalog-api:
+    build: ./services/catalog-api
+    container_name: ropa-catalog-api
+    ports: ["3003:3003"]
+    environment:
+      DATABASE_URL:      postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  crm-api:
+    build: ./services/crm-api
+    container_name: ropa-crm-api
+    ports: ["3004:3004"]
+    environment:
+      DATABASE_URL: postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  payment-gateway:
+    build: ./services/payment-gateway
+    container_name: ropa-payment-gateway
+    ports: ["3005:3005"]
+    environment:
+      DATABASE_URL:          postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+      TIGO_MONEY_API_KEY:    ${TIGO_MONEY_API_KEY}
+      TIGO_MONEY_MERCHANT_ID: ${TIGO_MONEY_MERCHANT_ID}
+      BNB_MERCHANT_CODE:     ${BNB_MERCHANT_CODE}
+      CRM_API_URL:           http://crm-api:3004
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  ai-recommender:
+    build: ./services/ai-recommender
+    container_name: ropa-ai-recommender
+    ports: ["3006:3006"]
+    environment:
+      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY}
+      CRM_API_URL:        http://crm-api:3004
+      CATALOG_API_URL:    http://catalog-api:3003
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  content-scheduler:
+    build: ./services/content-scheduler
+    container_name: ropa-content-scheduler
+    ports: ["3007:3007"]
+    environment:
+      DATABASE_URL:            postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+      ANTHROPIC_API_KEY:       ${ANTHROPIC_API_KEY}
+      META_PAGE_ACCESS_TOKEN:  ${META_PAGE_ACCESS_TOKEN}
+      META_PAGE_ID:            ${META_PAGE_ID}
+      META_IG_ACCOUNT_ID:      ${META_IG_ACCOUNT_ID}
+      AI_RECOMMENDER_URL:      http://ai-recommender:3006
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  campaign-engine:
+    build: ./services/campaign-engine
+    container_name: ropa-campaign-engine
+    ports: ["3008:3008"]
+    environment:
+      DATABASE_URL:          postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+      WA_BOT_URL:            http://whatsapp-bot:3001
+      CRM_API_URL:           http://crm-api:3004
+      AI_RECOMMENDER_URL:    http://ai-recommender:3006
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  analytics-api:
+    build: ./services/analytics-api
+    container_name: ropa-analytics-api
+    ports: ["3009:3009"]
+    environment:
+      DATABASE_URL: postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
+
+  notification-worker:
+    build: ./services/notification-worker
+    container_name: ropa-notification-worker
+    ports: ["3010:3010"]
+    environment:
+      DATABASE_URL:           postgresql://ropa_user:ropa_pass_2025@postgres:5432/ropa_bolivia
+      WA_BOT_URL:             http://whatsapp-bot:3001
+      CRM_API_URL:            http://crm-api:3004
+      AI_RECOMMENDER_URL:     http://ai-recommender:3006
+      CAMPAIGN_ENGINE_URL:    http://campaign-engine:3008
+      ANALYTICS_API_URL:      http://analytics-api:3009
+      OWNER_WHATSAPP:         ${OWNER_WHATSAPP}
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [ropa-net]
+    restart: unless-stopped
