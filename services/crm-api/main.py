@@ -34,15 +34,6 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="CRM API — RopaBolivia", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-@app.on_event("startup")
-def startup():
-    try:
-        init_db()
-        log.info("CRM API iniciada ✓")
-    except Exception as e:
-        log.error(f"DB no disponible al inicio: {e}")
-        log.info("El servicio continúa sin DB — reintentará en cada request")
-
 # ═════════════════════════════════════════════════════════════════════════════
 # CLIENTES
 # ═════════════════════════════════════════════════════════════════════════════
