@@ -6,3 +6,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 HEALTHCHECK --interval=30s --timeout=10s CMD curl -f http://localhost:3004/health || exit 1
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3004", "--workers", "2"]
+# force rebuild Wed Jul 15 14:47:48     2026
