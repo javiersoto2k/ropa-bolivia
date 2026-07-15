@@ -14,6 +14,10 @@ from sqlalchemy import func, and_, or_
 from pydantic import BaseModel
 from typing import Optional, List
 
+import os
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+os.environ["DATABASE_URL"] = DATABASE_URL
 from models.database import (
     get_db, init_db, Cliente, Pedido, ItemPedido, Pago,
     Conversacion, Seguimiento, Campana,
