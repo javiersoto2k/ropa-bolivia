@@ -25,8 +25,12 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.on_event("startup")
 def startup():
-    init_db()
-    log.info("Analytics API iniciada ✓")
+    try:
+        init_db()
+        log.info("Analytics API iniciada ✓")
+    except Exception as e:
+        log.error(f"DB no disponible al inicio: {e}")
+        log.info("El servicio continúa sin DB — reintentará en cada request")
 
 # ═════════════════════════════════════════════════════════════════════════════
 # RESUMEN HOY (para reporte diario del worker)
